@@ -619,32 +619,3 @@
   </script>
 </body>
 </html>
-        
-        menu.appendChild(copyFull);
-        menu.appendChild(copyRelative);
-        document.body.appendChild(menu);
-        
-        // Cerrar menú al hacer clic fuera
-        setTimeout(() => {
-          document.addEventListener('click', function closeMenu() {
-            if (menu && menu.parentNode) {
-              menu.remove();
-            }
-            document.removeEventListener('click', closeMenu);
-          });
-        }, 100);
-        
-        return false;
-      }
-    });
-    
-    // Remove custom menu on click elsewhere
-    document.addEventListener('click', function() {
-      if (contextMenuTarget) {
-        contextMenuTarget.remove();
-        contextMenuTarget = null;
-      }
-    });
-  </script>
-</body>
-</html>
