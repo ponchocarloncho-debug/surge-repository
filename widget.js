@@ -48,6 +48,7 @@ const WIDGET_CONFIG = {
         return;
       }
       videosData = await response.json();
+      window.videosData = videosData; // Store globally for loadMoreRecent
       generateWidget();
     } catch (error) {
       console.warn('videos.json not available - this is normal in preview mode');
@@ -117,11 +118,11 @@ const WIDGET_CONFIG = {
     
     if (index > -1) {
       favorites.splice(index, 1);
-      event.currentTarget.innerHTML = '☆';
+      event.currentTarget.innerHTML = '📑';
       event.currentTarget.classList.remove('favorited');
     } else {
       favorites.push(videoUrl);
-      event.currentTarget.innerHTML = '★';
+      event.currentTarget.innerHTML = '🔖';
       event.currentTarget.classList.add('favorited');
     }
     
@@ -165,7 +166,7 @@ const WIDGET_CONFIG = {
         <button class="favorite-btn ${favorited ? 'favorited' : ''}" 
                 onclick="window.toggleFavorite('${video.url}', event)" 
                 title="${favorited ? 'Remove from favorites' : 'Add to favorites'}">
-          ${favorited ? '★' : '☆'}
+          ${favorited ? '🔖' : '📑'}
         </button>
       </div>
     `;
@@ -216,7 +217,22 @@ const WIDGET_CONFIG = {
         type: 'random',
         html: `
           <div class="widget-section">
-            <h2 class="widget-title">Random Videos</h2>
+            <h2 class="widget-title" style="display: flex; align-items: center; justify-content: space-between;">
+              <span>Random Videos</span>
+              <button onclick="location.reload()" style="
+                background: #e50914;
+                color: white;
+                border: none;
+                padding: 0.5rem 1rem;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 0.85rem;
+                font-weight: bold;
+                transition: background 0.3s;
+              " onmouseover="this.style.background='#c40812'" onmouseout="this.style.background='#e50914'">
+                🔄 Reload
+              </button>
+            </h2>
             <div class="widget-grid">
               ${randomVideos.map(video => createVideoCard(video)).join('')}
             </div>
@@ -231,9 +247,25 @@ const WIDGET_CONFIG = {
         html: `
           <div class="widget-section">
             <h2 class="widget-title">Recent Videos</h2>
-            <div class="widget-grid">
+            <div class="widget-grid" id="recent-videos-grid">
               ${recentVideos.map(video => createVideoCard(video)).join('')}
             </div>
+            ${videosData.length > recentVideos.length ? `
+              <button id="load-more-recent" onclick="loadMoreRecent()" style="
+                width: 100%;
+                background: #2a2a2a;
+                color: white;
+                border: 1px solid #3a3a3a;
+                padding: 0.75rem;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 0.9rem;
+                margin-top: 1rem;
+                transition: all 0.3s;
+              " onmouseover="this.style.background='#3a3a3a'" onmouseout="this.style.background='#2a2a2a'">
+                Load 4 More Recent Videos ▼
+              </button>
+            ` : ''}
           </div>
         `
       });
@@ -251,6 +283,26 @@ const WIDGET_CONFIG = {
   // Make toggleFavorite available globally
   window.toggleFavorite = toggleFavorite;
   
+  // Load more recent videos
+  let currentRecentCount = WIDGET_CONFIG.recentVideosCount;
+  window.loadMoreRecent = function() {
+    currentRecentCount += 4;
+    const grid = document.getElementById('recent-videos-grid');
+    const button = document.getElementById('load-more-recent');
+    
+    const videosData = window.videosData || [];
+    const recentVideos = getRecentVideos(videosData, currentRecentCount);
+    
+    grid.innerHTML = recentVideos.map(video => createVideoCard(video)).join('');
+    
+    // Hide button if no more videos
+    if (recentVideos.length >= videosData.length || currentRecentCount >= videosData.length) {
+      button.style.display = 'none';
+    } else {
+      button.textContent = `Load 4 More Recent Videos ▼`;
+    }
+  };
+  
   // Custom context menu for widget thumbnails
   let contextMenuTarget = null;
   
@@ -264,19 +316,13 @@ const WIDGET_CONFIG = {
       
       if (!href) return;
       
-      // NORMALIZAR: asegurar que tenga 'videos/' si es una página de video
+      // NORMALIZAR
       const currentPath = window.location.pathname;
       const isInVideosFolder = currentPath.includes('/videos/');
       
       if (!href.startsWith('http') && !href.startsWith('/')) {
-        if (isInVideosFolder) {
-          // Estamos en videos/, href es relativo como "otro-video.html"
-          // No necesita videos/ porque ya estamos ahí
-        } else {
-          // Estamos en root, asegurar videos/ prefix
-          if (!href.startsWith('videos/') && href.endsWith('.html')) {
-            href = 'videos/' + href;
-          }
+        if (!isInVideosFolder && !href.startsWith('videos/') && href.endsWith('.html')) {
+          href = 'videos/' + href;
         }
       }
       
@@ -294,7 +340,6 @@ const WIDGET_CONFIG = {
         }
       }
       
-      // Crear menú con ambas opciones
       const existingMenu = document.getElementById('widget-context-menu');
       if (existingMenu) existingMenu.remove();
       
@@ -310,33 +355,54 @@ const WIDGET_CONFIG = {
         padding: 0.5rem 0;
         z-index: 10000;
         box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-        min-width: 200px;
       `;
       
-      // Opción 1: Copiar URL completa
-      const copyFull = document.createElement('div');
-      copyFull.innerHTML = '<strong>🌐 Copy full URL</strong><br><small style="color:#888; font-size:0.8em;">For sharing</small>';
-      copyFull.style.cssText = `
-        padding: 0.7rem 1rem;
+      const copyLink = document.createElement('div');
+      copyLink.textContent = 'Copy link...';
+      copyLink.style.cssText = `
+        padding: 0.5rem 1rem;
         cursor: pointer;
         color: #e0e0e0;
         font-size: 0.9rem;
-        border-bottom: 1px solid #2a2a2a;
       `;
-      copyFull.onmouseover = () => copyFull.style.background = '#2a2a2a';
-      copyFull.onmouseout = () => copyFull.style.background = 'transparent';
-      copyFull.onclick = () => {
+      copyLink.onmouseover = () => copyLink.style.background = '#2a2a2a';
+      copyLink.onmouseout = () => copyLink.style.background = 'transparent';
+      copyLink.onclick = () => {
         navigator.clipboard.writeText(fullUrl).then(() => {
-          alert('✅ Full URL copied!\n' + fullUrl);
+          alert('Link copied!');
         }).catch(console.error);
         menu.remove();
       };
       
-      // Opción 2: Copiar ruta relativa
-      const copyRelative = document.createElement('div');
-      copyRelative.innerHTML = '<strong>📁 Copy relative path</strong><br><small style="color:#888; font-size:0.8em;">For development</small>';
-      copyRelative.style.cssText = `
-        padding: 0.7rem 1rem;
+      menu.appendChild(copyLink);
+      document.body.appendChild(menu);
+      
+      setTimeout(() => {
+        document.addEventListener('click', function closeMenu() {
+          if (menu && menu.parentNode) menu.remove();
+          document.removeEventListener('click', closeMenu);
+        });
+      }, 100);
+      
+      return false;
+    }
+  });
+  
+  // Remove custom menu on click elsewhere
+  document.addEventListener('click', function() {
+    if (contextMenuTarget) {
+      contextMenuTarget.remove();
+      contextMenuTarget = null;
+    }
+  });
+  
+  // Initialize when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadVideos);
+  } else {
+    loadVideos();
+  }
+})();
         cursor: pointer;
         color: #e0e0e0;
         font-size: 0.9rem;

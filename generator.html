@@ -355,7 +355,21 @@
       <button class="btn btn-secondary" onclick="clearMemory()">Clear Memory</button>
       
       <div id="json-preview" class="preview-container" style="display: none;">
-        <h3 class="preview-title">JSON Preview</h3>
+        <h3 class="preview-title" style="display: flex; justify-content: space-between; align-items: center;">
+          <span>JSON Preview</span>
+          <button onclick="copyJsonToClipboard()" style="
+            background: #e50914;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: bold;
+          " onmouseover="this.style.background='#c40812'" onmouseout="this.style.background='#e50914'">
+            📋 Copy JSON
+          </button>
+        </h3>
         <pre id="json-preview-content" style="color: #888; overflow-x: auto; max-height: 400px;"></pre>
       </div>
       
@@ -1654,6 +1668,22 @@
       
       content.textContent = JSON.stringify(videosData, null, 2);
       preview.style.display = 'block';
+    }
+    
+    // Copy JSON to clipboard
+    function copyJsonToClipboard() {
+      if (videosData.length === 0) {
+        alert('No videos in memory to copy');
+        return;
+      }
+      
+      const jsonString = JSON.stringify(videosData, null, 2);
+      navigator.clipboard.writeText(jsonString).then(() => {
+        alert(`✅ Copied ${videosData.length} videos to clipboard!\nYou can now paste directly into videos.json`);
+      }).catch(err => {
+        console.error('Failed to copy:', err);
+        alert('Failed to copy. Try using the download button instead.');
+      });
     }
     
     // Clear memory

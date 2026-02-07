@@ -544,7 +544,7 @@
         
         if (!href) return;
         
-        // NORMALIZAR: asegurar que tenga 'videos/' si es una página de video
+        // NORMALIZAR
         if (!href.startsWith('http') && !href.startsWith('/')) {
           if (!href.startsWith('videos/') && href.endsWith('.html')) {
             href = 'videos/' + href;
@@ -561,7 +561,6 @@
           fullUrl = window.location.origin + '/' + href;
         }
         
-        // Crear menú con ambas opciones
         const existingMenu = document.getElementById('favorites-context-menu');
         if (existingMenu) existingMenu.remove();
         
@@ -577,45 +576,49 @@
           padding: 0.5rem 0;
           z-index: 10000;
           box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-          min-width: 200px;
         `;
         
-        // Opción 1: Copiar URL completa
-        const copyFull = document.createElement('div');
-        copyFull.innerHTML = '<strong>🌐 Copy full URL</strong><br><small style="color:#888; font-size:0.8em;">For sharing</small>';
-        copyFull.style.cssText = `
-          padding: 0.7rem 1rem;
+        const copyLink = document.createElement('div');
+        copyLink.textContent = 'Copy link...';
+        copyLink.style.cssText = `
+          padding: 0.5rem 1rem;
           cursor: pointer;
           color: #e0e0e0;
           font-size: 0.9rem;
-          border-bottom: 1px solid #2a2a2a;
         `;
-        copyFull.onmouseover = () => copyFull.style.background = '#2a2a2a';
-        copyFull.onmouseout = () => copyFull.style.background = 'transparent';
-        copyFull.onclick = () => {
+        copyLink.onmouseover = () => copyLink.style.background = '#2a2a2a';
+        copyLink.onmouseout = () => copyLink.style.background = 'transparent';
+        copyLink.onclick = () => {
           navigator.clipboard.writeText(fullUrl).then(() => {
-            alert('✅ Full URL copied!\n' + fullUrl);
+            alert('Link copied!');
           }).catch(console.error);
           menu.remove();
         };
         
-        // Opción 2: Copiar ruta relativa
-        const copyRelative = document.createElement('div');
-        copyRelative.innerHTML = '<strong>📁 Copy relative path</strong><br><small style="color:#888; font-size:0.8em;">For development</small>';
-        copyRelative.style.cssText = `
-          padding: 0.7rem 1rem;
-          cursor: pointer;
-          color: #e0e0e0;
-          font-size: 0.9rem;
-        `;
-        copyRelative.onmouseover = () => copyRelative.style.background = '#2a2a2a';
-        copyRelative.onmouseout = () => copyRelative.style.background = 'transparent';
-        copyRelative.onclick = () => {
-          navigator.clipboard.writeText(href).then(() => {
-            alert('✅ Relative path copied!\n' + href);
-          }).catch(console.error);
-          menu.remove();
-        };
+        menu.appendChild(copyLink);
+        document.body.appendChild(menu);
+        
+        setTimeout(() => {
+          document.addEventListener('click', function closeMenu() {
+            if (menu && menu.parentNode) menu.remove();
+            document.removeEventListener('click', closeMenu);
+          });
+        }, 100);
+        
+        return false;
+      }
+    });
+    
+    // Remove custom menu on click elsewhere
+    document.addEventListener('click', function() {
+      if (contextMenuTarget) {
+        contextMenuTarget.remove();
+        contextMenuTarget = null;
+      }
+    });
+  </script>
+</body>
+</html>
         
         menu.appendChild(copyFull);
         menu.appendChild(copyRelative);
