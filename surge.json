@@ -1,0 +1,12 @@
+{
+  "https": {
+    "cert": "to.meplay.site.crt",
+    "key": "to.meplay.site.key"
+  },
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "https://to.meplay.site"
+    }
+  ]
+}
