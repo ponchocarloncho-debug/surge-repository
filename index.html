@@ -488,7 +488,7 @@
         copyLink.onmouseout = () => copyLink.style.background = 'transparent';
         copyLink.onclick = () => {
           navigator.clipboard.writeText(fullUrl).then(() => {
-            alert('Link copied!');
+            // Link copied silently
           }).catch(console.error);
           menu.remove();
         };
@@ -502,26 +502,6 @@
             document.removeEventListener('click', closeMenu);
           });
         }, 100);
-        
-        return false;
-      }
-    });
-        copyLinkOption.onmouseover = () => copyLinkOption.style.background = '#2a2a2a';
-        copyLinkOption.onmouseout = () => copyLinkOption.style.background = 'transparent';
-        copyLinkOption.onclick = () => {
-          if (pageUrl) {
-            navigator.clipboard.writeText(pageUrl).then(() => {
-              alert('Link copied to clipboard!');
-            }).catch(err => {
-              console.error('Failed to copy:', err);
-            });
-          }
-          menu.remove();
-        };
-        
-        menu.appendChild(copyLinkOption);
-        document.body.appendChild(menu);
-        contextMenuTarget = menu;
         
         return false;
       }

@@ -590,7 +590,7 @@
         copyLink.onmouseout = () => copyLink.style.background = 'transparent';
         copyLink.onclick = () => {
           navigator.clipboard.writeText(fullUrl).then(() => {
-            alert('Link copied!');
+            // Link copied silently
           }).catch(console.error);
           menu.remove();
         };

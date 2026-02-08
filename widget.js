@@ -24,6 +24,26 @@ const WIDGET_CONFIG = {
 };
 // ========================================
 
+// Add CSS for bookmark styling
+(function() {
+  const style = document.createElement('style');
+  style.textContent = `
+    .favorite-btn {
+      color: #666;
+      filter: grayscale(100%);
+      transition: all 0.3s;
+    }
+    .favorite-btn.favorited {
+      color: #e50914;
+      filter: grayscale(0%);
+    }
+    .favorite-btn:hover {
+      transform: scale(1.1);
+    }
+  `;
+  document.head.appendChild(style);
+})();
+
 (function() {
   let videosData = [];
   
@@ -118,11 +138,9 @@ const WIDGET_CONFIG = {
     
     if (index > -1) {
       favorites.splice(index, 1);
-      event.currentTarget.innerHTML = '📑';
       event.currentTarget.classList.remove('favorited');
     } else {
       favorites.push(videoUrl);
-      event.currentTarget.innerHTML = '🔖';
       event.currentTarget.classList.add('favorited');
     }
     
@@ -166,7 +184,7 @@ const WIDGET_CONFIG = {
         <button class="favorite-btn ${favorited ? 'favorited' : ''}" 
                 onclick="window.toggleFavorite('${video.url}', event)" 
                 title="${favorited ? 'Remove from favorites' : 'Add to favorites'}">
-          ${favorited ? '🔖' : '📑'}
+          🔖
         </button>
       </div>
     `;
@@ -291,15 +309,30 @@ const WIDGET_CONFIG = {
     const button = document.getElementById('load-more-recent');
     
     const videosData = window.videosData || [];
-    const recentVideos = getRecentVideos(videosData, currentRecentCount);
     
-    grid.innerHTML = recentVideos.map(video => createVideoCard(video)).join('');
+    // Get current page URL
+    const pathParts = window.location.pathname.split('/');
+    const filename = pathParts.pop();
+    const folder = pathParts.pop();
+    const currentUrl = folder && folder !== '' ? folder + '/' + filename : filename;
     
-    // Hide button if no more videos
-    if (recentVideos.length >= videosData.length || currentRecentCount >= videosData.length) {
+    // Get all recent videos excluding current page
+    const allRecent = videosData
+      .filter(v => v.url !== currentUrl)
+      .slice(-currentRecentCount)
+      .reverse();
+    
+    grid.innerHTML = allRecent.map(video => createVideoCard(video)).join('');
+    
+    // Calculate total available recent videos
+    const totalAvailable = videosData.filter(v => v.url !== currentUrl).length;
+    
+    // Hide button if showing all or no more to load
+    if (currentRecentCount >= totalAvailable) {
       button.style.display = 'none';
     } else {
-      button.textContent = `Load 4 More Recent Videos ▼`;
+      const remaining = totalAvailable - currentRecentCount;
+      button.textContent = `Load ${Math.min(4, remaining)} More Recent Videos ▼`;
     }
   };
   
@@ -369,7 +402,7 @@ const WIDGET_CONFIG = {
       copyLink.onmouseout = () => copyLink.style.background = 'transparent';
       copyLink.onclick = () => {
         navigator.clipboard.writeText(fullUrl).then(() => {
-          alert('Link copied!');
+          // Link copied silently
         }).catch(console.error);
         menu.remove();
       };
