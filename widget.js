@@ -24,6 +24,76 @@ const WIDGET_CONFIG = {
 };
 // ========================================
 
+// Add CSS for bookmark styling
+(function() {
+  const style = document.createElement('style');
+  style.textContent = `
+    .favorite-btn {
+      color: #666;
+      transition: all 0.3s;
+    }
+    .favorite-btn.favorited {
+      color: #e50914;
+    }
+    .favorite-btn:hover {
+      transform: scale(1.2);
+    }
+    
+    /* Toast notification */
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: rgba(0, 0, 0, 0.9);
+      color: white;
+      padding: 1rem 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      z-index: 10000;
+      animation: slideIn 0.3s ease-out;
+      max-width: 350px;
+    }
+    
+    .toast.removing {
+      animation: slideOut 0.3s ease-out;
+    }
+    
+    .toast.added {
+      border-left: 4px solid #22c55e;
+    }
+    
+    .toast.removed {
+      border-left: 4px solid #ef4444;
+    }
+    
+    @keyframes slideIn {
+      from {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+    
+    @keyframes slideOut {
+      from {
+        transform: translateX(0);
+        opacity: 1;
+      }
+      to {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+})();
+
 (function() {
   let videosData = [];
   
@@ -109,24 +179,52 @@ const WIDGET_CONFIG = {
   }
   
   // Toggle favorite
-  function toggleFavorite(videoUrl, event) {
+  function toggleFavorite(button, event) {
     event.preventDefault();
     event.stopPropagation();
+    
+    const videoUrl = button.dataset.videoUrl;
+    const videoTitle = button.dataset.videoTitle;
     
     let favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
     const index = favorites.indexOf(videoUrl);
     
     if (index > -1) {
       favorites.splice(index, 1);
-      event.currentTarget.innerHTML = '📑';
-      event.currentTarget.classList.remove('favorited');
+      button.innerHTML = '☆';
+      button.classList.remove('favorited');
+      showToast(`"${videoTitle}" removed from favorites`, 'removed');
     } else {
       favorites.push(videoUrl);
-      event.currentTarget.innerHTML = '🔖';
-      event.currentTarget.classList.add('favorited');
+      button.innerHTML = '★';
+      button.classList.add('favorited');
+      showToast(`"${videoTitle}" added to favorites`, 'added');
     }
     
     localStorage.setItem('favorites', JSON.stringify(favorites));
+  }
+  
+  // Show toast notification
+  function showToast(message, type) {
+    // Remove existing toasts
+    const existingToasts = document.querySelectorAll('.toast');
+    existingToasts.forEach(toast => toast.remove());
+    
+    // Create new toast
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `
+      <span>${type === 'added' ? '✓' : '✕'}</span>
+      <span>${message}</span>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+      toast.classList.add('removing');
+      setTimeout(() => toast.remove(), 300);
+    }, 3000);
   }
   
   // Check if video is favorited
@@ -164,9 +262,11 @@ const WIDGET_CONFIG = {
           </div>
         </a>
         <button class="favorite-btn ${favorited ? 'favorited' : ''}" 
-                onclick="window.toggleFavorite('${video.url}', event)" 
+                data-video-url="${video.url}"
+                data-video-title="${video.title.replace(/"/g, '&quot;')}"
+                onclick="window.toggleFavorite(this, event)" 
                 title="${favorited ? 'Remove from favorites' : 'Add to favorites'}">
-          ${favorited ? '🔖' : '📑'}
+          ${favorited ? '★' : '☆'}
         </button>
       </div>
     `;
@@ -291,15 +391,30 @@ const WIDGET_CONFIG = {
     const button = document.getElementById('load-more-recent');
     
     const videosData = window.videosData || [];
-    const recentVideos = getRecentVideos(videosData, currentRecentCount);
     
-    grid.innerHTML = recentVideos.map(video => createVideoCard(video)).join('');
+    // Get current page URL
+    const pathParts = window.location.pathname.split('/');
+    const filename = pathParts.pop();
+    const folder = pathParts.pop();
+    const currentUrl = folder && folder !== '' ? folder + '/' + filename : filename;
     
-    // Hide button if no more videos
-    if (recentVideos.length >= videosData.length || currentRecentCount >= videosData.length) {
+    // Get all recent videos excluding current page
+    const allRecent = videosData
+      .filter(v => v.url !== currentUrl)
+      .slice(-currentRecentCount)
+      .reverse();
+    
+    grid.innerHTML = allRecent.map(video => createVideoCard(video)).join('');
+    
+    // Calculate total available recent videos
+    const totalAvailable = videosData.filter(v => v.url !== currentUrl).length;
+    
+    // Hide button if showing all or no more to load
+    if (currentRecentCount >= totalAvailable) {
       button.style.display = 'none';
     } else {
-      button.textContent = `Load 4 More Recent Videos ▼`;
+      const remaining = totalAvailable - currentRecentCount;
+      button.textContent = `Load ${Math.min(4, remaining)} More Recent Videos ▼`;
     }
   };
   
@@ -369,7 +484,7 @@ const WIDGET_CONFIG = {
       copyLink.onmouseout = () => copyLink.style.background = 'transparent';
       copyLink.onclick = () => {
         navigator.clipboard.writeText(fullUrl).then(() => {
-          alert('Link copied!');
+          // Link copied silently
         }).catch(console.error);
         menu.remove();
       };
@@ -380,52 +495,6 @@ const WIDGET_CONFIG = {
       setTimeout(() => {
         document.addEventListener('click', function closeMenu() {
           if (menu && menu.parentNode) menu.remove();
-          document.removeEventListener('click', closeMenu);
-        });
-      }, 100);
-      
-      return false;
-    }
-  });
-  
-  // Remove custom menu on click elsewhere
-  document.addEventListener('click', function() {
-    if (contextMenuTarget) {
-      contextMenuTarget.remove();
-      contextMenuTarget = null;
-    }
-  });
-  
-  // Initialize when DOM is ready
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', loadVideos);
-  } else {
-    loadVideos();
-  }
-})();
-        cursor: pointer;
-        color: #e0e0e0;
-        font-size: 0.9rem;
-      `;
-      copyRelative.onmouseover = () => copyRelative.style.background = '#2a2a2a';
-      copyRelative.onmouseout = () => copyRelative.style.background = 'transparent';
-      copyRelative.onclick = () => {
-        navigator.clipboard.writeText(href).then(() => {
-          alert('✅ Relative path copied!\n' + href);
-        }).catch(console.error);
-        menu.remove();
-      };
-      
-      menu.appendChild(copyFull);
-      menu.appendChild(copyRelative);
-      document.body.appendChild(menu);
-      
-      // Cerrar menú al hacer clic fuera
-      setTimeout(() => {
-        document.addEventListener('click', function closeMenu() {
-          if (menu && menu.parentNode) {
-            menu.remove();
-          }
           document.removeEventListener('click', closeMenu);
         });
       }, 100);

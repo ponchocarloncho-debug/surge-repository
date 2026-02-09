@@ -170,7 +170,7 @@
       right: 0.5rem;
       background: rgba(0, 0, 0, 0.7);
       border: none;
-      color: #fff;
+      color: #666;
       font-size: 1.5rem;
       width: 40px;
       height: 40px;
@@ -184,12 +184,12 @@
     }
     
     .favorite-btn:hover {
-      background: rgba(229, 9, 20, 0.9);
-      transform: scale(1.1);
+      background: rgba(0, 0, 0, 0.9);
+      transform: scale(1.2);
     }
     
     .favorite-btn.favorited {
-      color: #ffd700;
+      color: #e50914;
     }
     
     .no-results {
@@ -205,6 +205,58 @@
     
     .search-results.active {
       display: block;
+    }
+    
+    /* Toast notification */
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: rgba(0, 0, 0, 0.9);
+      color: white;
+      padding: 1rem 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      z-index: 10000;
+      animation: slideIn 0.3s ease-out;
+      max-width: 350px;
+    }
+    
+    .toast.removing {
+      animation: slideOut 0.3s ease-out;
+    }
+    
+    .toast.added {
+      border-left: 4px solid #22c55e;
+    }
+    
+    .toast.removed {
+      border-left: 4px solid #ef4444;
+    }
+    
+    @keyframes slideIn {
+      from {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+    
+    @keyframes slideOut {
+      from {
+        transform: translateX(0);
+        opacity: 1;
+      }
+      to {
+        transform: translateX(400px);
+        opacity: 0;
+      }
     }
     
     @media (max-width: 768px) {
@@ -245,13 +297,37 @@
     }
   </script>
   
-  <div class="search-container">
+  <div class="search-container" style="position: relative;">
     <input 
       type="text" 
       id="search-box" 
       class="search-box" 
       placeholder="Search by title, tags, or description..."
+      style="padding-right: 100px;"
     >
+    <button 
+      id="clear-search-btn" 
+      onclick="clearSearch()" 
+      style="
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: #2a2a2a;
+        color: #888;
+        border: 1px solid #3a3a3a;
+        padding: 0.4rem 0.8rem;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.85rem;
+        transition: all 0.3s;
+        display: none;
+      "
+      onmouseover="this.style.background='#3a3a3a'; this.style.color='#fff';" 
+      onmouseout="this.style.background='#2a2a2a'; this.style.color='#888';"
+    >
+      ✕ Clear
+    </button>
   </div>
   
   <main class="main-content">
@@ -389,7 +465,9 @@
             </div>
           </a>
           <button class="favorite-btn ${favorited ? 'favorited' : ''}" 
-                  onclick="toggleSearchFavorite('${video.url}', event)" 
+                  data-video-url="${video.url}"
+                  data-video-title="${video.title.replace(/"/g, '&quot;')}"
+                  onclick="toggleSearchFavorite(this, event)" 
                   title="${favorited ? 'Remove from favorites' : 'Add to favorites'}">
             ${favorited ? '★' : '☆'}
           </button>
@@ -397,30 +475,69 @@
       `;
     }
     
-    function toggleSearchFavorite(videoUrl, event) {
+    function toggleSearchFavorite(button, event) {
       event.preventDefault();
       event.stopPropagation();
+      
+      const videoUrl = button.dataset.videoUrl;
+      const videoTitle = button.dataset.videoTitle;
       
       let favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
       const index = favorites.indexOf(videoUrl);
       
       if (index > -1) {
         favorites.splice(index, 1);
-        event.currentTarget.innerHTML = '☆';
-        event.currentTarget.classList.remove('favorited');
+        button.innerHTML = '☆';
+        button.classList.remove('favorited');
+        showToast(`"${videoTitle}" removed from favorites`, 'removed');
       } else {
         favorites.push(videoUrl);
-        event.currentTarget.innerHTML = '★';
-        event.currentTarget.classList.add('favorited');
+        button.innerHTML = '★';
+        button.classList.add('favorited');
+        showToast(`"${videoTitle}" added to favorites`, 'added');
       }
       
       localStorage.setItem('favorites', JSON.stringify(favorites));
+    }
+    
+    // Show toast notification
+    function showToast(message, type) {
+      // Remove existing toasts
+      const existingToasts = document.querySelectorAll('.toast');
+      existingToasts.forEach(toast => toast.remove());
+      
+      // Create new toast
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.innerHTML = `
+        <span>${type === 'added' ? '✓' : '✕'}</span>
+        <span>${message}</span>
+      `;
+      
+      document.body.appendChild(toast);
+      
+      // Auto remove after 3 seconds
+      setTimeout(() => {
+        toast.classList.add('removing');
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+    
+    // Clear search and show widget
+    function clearSearch() {
+      document.getElementById('search-box').value = '';
+      document.getElementById('search-results').classList.remove('active');
+      document.getElementById('video-widget').style.display = 'block';
+      document.getElementById('clear-search-btn').style.display = 'none';
     }
     
     // Search event listener with debounce
     let searchTimeout;
     document.getElementById('search-box').addEventListener('input', function(e) {
       clearTimeout(searchTimeout);
+      const hasValue = e.target.value.trim().length > 0;
+      document.getElementById('clear-search-btn').style.display = hasValue ? 'block' : 'none';
+      
       searchTimeout = setTimeout(() => {
         searchVideos(e.target.value);
       }, 300);
@@ -488,7 +605,7 @@
         copyLink.onmouseout = () => copyLink.style.background = 'transparent';
         copyLink.onclick = () => {
           navigator.clipboard.writeText(fullUrl).then(() => {
-            alert('Link copied!');
+            // Link copied silently
           }).catch(console.error);
           menu.remove();
         };
@@ -502,26 +619,6 @@
             document.removeEventListener('click', closeMenu);
           });
         }, 100);
-        
-        return false;
-      }
-    });
-        copyLinkOption.onmouseover = () => copyLinkOption.style.background = '#2a2a2a';
-        copyLinkOption.onmouseout = () => copyLinkOption.style.background = 'transparent';
-        copyLinkOption.onclick = () => {
-          if (pageUrl) {
-            navigator.clipboard.writeText(pageUrl).then(() => {
-              alert('Link copied to clipboard!');
-            }).catch(err => {
-              console.error('Failed to copy:', err);
-            });
-          }
-          menu.remove();
-        };
-        
-        menu.appendChild(copyLinkOption);
-        document.body.appendChild(menu);
-        contextMenuTarget = menu;
         
         return false;
       }
