@@ -390,25 +390,20 @@
     // Load all videos data
     async function loadVideos() {
       try {
-        const response = await fetch('videos.json');
+        const response = await fetch('videodata.json');
         if (!response.ok) {
-          throw new Error('videos.json not found');
+          throw new Error('videodata.json not found');
         }
         const contentType = response.headers.get("content-type");
         if (!contentType || !contentType.includes("application/json")) {
-          throw new Error('videos.json not found');
+          throw new Error('videodata.json not found');
         }
         allVideos = await response.json();
         displayFavorites();
       } catch (error) {
-        console.warn('videos.json not available - this is normal in preview mode');
-        document.getElementById('favorites-container').innerHTML = `
-          <div class="empty-favorites">
-            <h2>Upload videos.json</h2>
-            <p>Upload your videos.json file to the server to see favorites.</p>
-            <a href="index.html" class="home-btn">Go Home</a>
-          </div>
-        `;
+        console.warn('videodata.json not available - showing favorites anyway');
+        // Even without videodata.json, we can show favorites if user has any
+        displayFavorites();
       }
     }
     
@@ -426,33 +421,65 @@
         container.innerHTML = `
           <div class="empty-favorites">
             <h2>No Favorites Yet</h2>
-            <p>Start adding videos to your favorites to see them here!</p>
+            <p>Start adding videos to your favorites by clicking the ★ star icon!</p>
             <a href="index.html" class="home-btn">Browse Videos</a>
           </div>
         `;
         return;
       }
       
-      // Filter videos that are in favorites
-      const favoriteVideos = allVideos.filter(video => favorites.includes(video.url));
-      
-      const headerHTML = `
-        <div class="favorites-header">
-          <h2 class="favorites-title">
-            Your Favorites
-            <span class="favorites-count">(${favoriteVideos.length} videos)</span>
-          </h2>
-          <button class="clear-all-btn" onclick="clearAllFavorites()">Clear All</button>
-        </div>
-      `;
-      
-      const cardsHTML = `
-        <div class="favorites-grid">
-          ${favoriteVideos.map(video => createFavoriteCard(video)).join('')}
-        </div>
-      `;
-      
-      container.innerHTML = headerHTML + cardsHTML;
+      // If we have videodata.json loaded, show full info
+      if (allVideos && allVideos.length > 0) {
+        const favoriteVideos = allVideos.filter(video => favorites.includes(video.url));
+        
+        const headerHTML = `
+          <div class="favorites-header">
+            <h2 class="favorites-title">
+              Your Favorites
+              <span class="favorites-count">(${favoriteVideos.length} videos)</span>
+            </h2>
+            <button class="clear-all-btn" onclick="clearAllFavorites()">Clear All</button>
+          </div>
+        `;
+        
+        const cardsHTML = `
+          <div class="favorites-grid">
+            ${favoriteVideos.map(video => createFavoriteCard(video)).join('')}
+          </div>
+        `;
+        
+        container.innerHTML = headerHTML + cardsHTML;
+      } else {
+        // Show favorites as simple list (without videodata.json)
+        const headerHTML = `
+          <div class="favorites-header">
+            <h2 class="favorites-title">
+              Your Favorites
+              <span class="favorites-count">(${favorites.length} videos)</span>
+            </h2>
+            <button class="clear-all-btn" onclick="clearAllFavorites()">Clear All</button>
+          </div>
+        `;
+        
+        const listHTML = `
+          <div class="favorites-grid">
+            ${favorites.map(url => `
+              <div class="video-card" style="padding: 1rem; background: #1a1a1a; border-radius: 8px;">
+                <a href="${url}" class="video-link" style="text-decoration: none; color: inherit;">
+                  <div class="video-info">
+                    <h3 class="video-title">${url.replace('videos/', '').replace('.html', '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</h3>
+                  </div>
+                </a>
+                <button class="remove-btn" onclick="removeFavorite('${url}', event)" title="Remove from favorites">
+                  ×
+                </button>
+              </div>
+            `).join('')}
+          </div>
+        `;
+        
+        container.innerHTML = headerHTML + listHTML;
+      }
     }
     
     // Create favorite video card
