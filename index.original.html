@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meplay Free Videos</title>
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  
+  <script src="ads.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #0f0f0f;
+      color: #e0e0e0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      line-height: 1.6;
+    }
+    
+    .header {
+      background: #1a1a1a;
+      padding: 1.5rem 2rem;
+      border-bottom: 1px solid #2a2a2a;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .site-title {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    
+    .favorites-btn {
+      background: #e50914;
+      color: #fff;
+      border: none;
+      padding: 0.7rem 1.5rem;
+      border-radius: 4px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.3s;
+      text-decoration: none;
+      display: inline-block;
+    }
+    
+    .favorites-btn:hover {
+      background: #c40812;
+    }
+    
+    .search-container {
+      max-width: 600px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+    
+    .search-box {
+      width: 100%;
+      padding: 1rem;
+      background: #1a1a1a;
+      border: 2px solid #2a2a2a;
+      border-radius: 8px;
+      color: #e0e0e0;
+      font-size: 1rem;
+      transition: border-color 0.3s;
+    }
+    
+    .search-box:focus {
+      outline: none;
+      border-color: #e50914;
+    }
+    
+    .search-box::placeholder {
+      color: #666;
+    }
+    
+    .main-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem 1rem;
+    }
+    
+    #video-widget {
+      margin-top: 1rem;
+    }
+    
+    .widget-section {
+      margin-bottom: 3rem;
+    }
+    
+    .widget-title {
+      font-size: 1.5rem;
+      margin-bottom: 1.5rem;
+      color: #fff;
+      border-left: 4px solid #e50914;
+      padding-left: 1rem;
+    }
+    
+    .widget-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+    
+    .video-card {
+      background: #1a1a1a;
+      border-radius: 8px;
+      overflow: hidden;
+      transition: transform 0.3s, box-shadow 0.3s;
+      position: relative;
+    }
+    
+    .video-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 16px rgba(229, 9, 20, 0.3);
+    }
+    
+    .video-link {
+      text-decoration: none;
+      color: inherit;
+      display: block;
+    }
+    
+    .video-thumbnail {
+      position: relative;
+      padding-top: 56.25%; /* 16:9 aspect ratio */
+      overflow: hidden;
+      background: #0f0f0f;
+    }
+    
+    .video-thumbnail img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s;
+    }
+    
+    .video-card:hover .video-thumbnail img {
+      transform: scale(1.05);
+    }
+    
+    .video-info {
+      padding: 1rem;
+    }
+    
+    .video-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #e0e0e0;
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    
+    .favorite-btn {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      background: rgba(0, 0, 0, 0.7);
+      border: none;
+      color: #666;
+      font-size: 1.5rem;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: all 0.3s;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .favorite-btn:hover {
+      background: rgba(0, 0, 0, 0.9);
+      transform: scale(1.2);
+    }
+    
+    .favorite-btn.favorited {
+      color: #e50914;
+    }
+    
+    .no-results {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: #888;
+      font-size: 1.2rem;
+    }
+    
+    .search-results {
+      display: none;
+    }
+    
+    .search-results.active {
+      display: block;
+    }
+    
+    @media (max-width: 768px) {
+      .header {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+      }
+      
+      .widget-grid {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 1rem;
+      }
+    }
+  </style>
+  
+  <script>
+    // LOGO CONFIGURATION - Edit here
+    const USE_LOGO = true; // Change to true to use logo
+    const LOGO_URL = 'logo.png';
+    const LOGO_ALT = 'Meplay Free Videos';
+    const SITE_TITLE = 'Meplay Free Videos';
+  </script>
+</head>
+<body>
+  <header class="header">
+    <div id="site-branding"></div>
+    <a href="favorites.html" class="favorites-btn">My Favorites</a>
+  </header>
+  
+  <script>
+    // Render logo or title
+    const branding = document.getElementById('site-branding');
+    if (USE_LOGO) {
+      branding.innerHTML = `<a href="index.html"><img src="${LOGO_URL}" alt="${LOGO_ALT}" class="site-logo" style="max-height: 50px; max-width: 200px; cursor: pointer;"></a>`;
+    } else {
+      branding.innerHTML = `<a href="index.html" style="text-decoration: none; color: inherit;"><h1 class="site-title">${SITE_TITLE}</h1></a>`;
+    }
+  </script>
+  
+  <div class="search-container" style="position: relative;">
+    <input 
+      type="text" 
+      id="search-box" 
+      class="search-box" 
+      placeholder="Search by title, tags, or description..."
+      style="padding-right: 100px;"
+    >
+    <button 
+      id="clear-search-btn" 
+      onclick="clearSearch()" 
+      style="
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: #2a2a2a;
+        color: #888;
+        border: 1px solid #3a3a3a;
+        padding: 0.4rem 0.8rem;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.85rem;
+        transition: all 0.3s;
+        display: none;
+      "
+      onmouseover="this.style.background='#3a3a3a'; this.style.color='#fff';" 
+      onmouseout="this.style.background='#2a2a2a'; this.style.color='#888';"
+    >
+      ✕ Clear
+    </button>
+  </div>
+  
+  <main class="main-content">
+    <div id="search-results" class="search-results"></div>
+    <div id="video-widget">
+      <p style="color: #888; text-align: center; padding: 3rem; font-size: 1.2rem;">
+        <span class="loading-spinner">⏳</span>
+        Loading videos...
+      </p>
+      <style>
+        .loading-spinner {
+          display: inline-block;
+          font-size: 3rem;
+          animation: spin 2s linear infinite, pulse 1.5s ease-in-out infinite;
+        }
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.6; transform: scale(1.2); }
+        }
+      </style>
+    </div>
+  </main>
+  
+  <script src="widget.js"></script>
+  <script>
+    // Search functionality
+    let allVideos = [];
+    
+    async function loadAllVideos() {
+      try {
+        const response = await fetch('videos.json');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+          console.warn('videos.json not found - search will not work until file is uploaded');
+          return;
+        }
+        allVideos = await response.json();
+        
+        // After loading, check for URL search parameter
+        checkUrlSearchParam();
+      } catch (error) {
+        console.warn('videos.json not found or invalid - this is normal in preview mode');
+      }
+    }
+    
+    function checkUrlSearchParam() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const searchParam = urlParams.get('search');
+      if (searchParam) {
+        document.getElementById('search-box').value = searchParam;
+        searchVideos(searchParam);
+      }
+    }
+    
+    function searchVideos(query) {
+      if (!query.trim()) {
+        document.getElementById('search-results').classList.remove('active');
+        document.getElementById('video-widget').style.display = 'block';
+        return;
+      }
+      
+      const lowerQuery = query.toLowerCase();
+      let titleMatches = 0, tagMatches = 0, descMatches = 0;
+      
+      const results = allVideos.filter(video => {
+        const titleMatch = video.title.toLowerCase().includes(lowerQuery);
+        const descMatch = video.description.toLowerCase().includes(lowerQuery);
+        const tagsMatch = video.tags.some(tag => tag.toLowerCase().includes(lowerQuery));
+        
+        if (titleMatch) titleMatches++;
+        if (tagsMatch) tagMatches++;
+        if (descMatch) descMatches++;
+        
+        return titleMatch || descMatch || tagsMatch;
+      });
+      
+      displaySearchResults(results, query, titleMatches, tagMatches, descMatches);
+    }
+    
+    function displaySearchResults(results, query, titleMatches, tagMatches, descMatches) {
+      const searchContainer = document.getElementById('search-results');
+      const widgetContainer = document.getElementById('video-widget');
+      
+      // Show search results, hide widget
+      searchContainer.classList.add('active');
+      widgetContainer.style.display = 'none';
+      
+      if (results.length === 0) {
+        searchContainer.innerHTML = `
+          <div class="no-results">
+            No results found for "${query}"
+          </div>
+        `;
+      } else {
+        const resultsHTML = `
+          <div class="widget-section">
+            <h2 class="widget-title">
+              Search Results (${results.length} total)
+              <span style="font-size: 0.8rem; color: #888; font-weight: normal;">
+                - ${titleMatches} by title, ${tagMatches} by tag, ${descMatches} by description
+              </span>
+            </h2>
+            <div class="widget-grid">
+              ${results.map(video => createSearchResultCard(video)).join('')}
+            </div>
+          </div>
+        `;
+        searchContainer.innerHTML = resultsHTML;
+      }
+      
+      searchContainer.classList.add('active');
+      widgetContainer.style.display = 'none';
+    }
+    
+    function createSearchResultCard(video) {
+      const randomImage = video.images[Math.floor(Math.random() * video.images.length)] || video.thumbnail;
+      const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+      const favorited = favorites.includes(video.url);
+      
+      return `
+        <div class="video-card">
+          <a href="${video.url}" class="video-link">
+            <div class="video-thumbnail">
+              <img src="${randomImage}" alt="${video.title}" loading="lazy">
+            </div>
+            <div class="video-info">
+              <h3 class="video-title">${video.title}</h3>
+            </div>
+          </a>
+          <button class="favorite-btn ${favorited ? 'favorited' : ''}" 
+                  onclick="toggleSearchFavorite('${video.url}', event)" 
+                  title="${favorited ? 'Remove from favorites' : 'Add to favorites'}">
+            ${favorited ? '★' : '☆'}
+          </button>
+        </div>
+      `;
+    }
+    
+    function toggleSearchFavorite(videoUrl, event) {
+      event.preventDefault();
+      event.stopPropagation();
+      
+      let favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+      const index = favorites.indexOf(videoUrl);
+      
+      if (index > -1) {
+        favorites.splice(index, 1);
+        event.currentTarget.innerHTML = '☆';
+        event.currentTarget.classList.remove('favorited');
+      } else {
+        favorites.push(videoUrl);
+        event.currentTarget.innerHTML = '★';
+        event.currentTarget.classList.add('favorited');
+      }
+      
+      localStorage.setItem('favorites', JSON.stringify(favorites));
+    }
+    
+    // Clear search and show widget
+    function clearSearch() {
+      document.getElementById('search-box').value = '';
+      document.getElementById('search-results').classList.remove('active');
+      document.getElementById('video-widget').style.display = 'block';
+      document.getElementById('clear-search-btn').style.display = 'none';
+    }
+    
+    // Search event listener with debounce
+    let searchTimeout;
+    document.getElementById('search-box').addEventListener('input', function(e) {
+      clearTimeout(searchTimeout);
+      const hasValue = e.target.value.trim().length > 0;
+      document.getElementById('clear-search-btn').style.display = hasValue ? 'block' : 'none';
+      
+      searchTimeout = setTimeout(() => {
+        searchVideos(e.target.value);
+      }, 300);
+    });
+    
+    // Load videos for search
+    loadAllVideos();
+    
+    // Custom context menu for images
+    let contextMenuTarget = null;
+    
+    document.addEventListener('contextmenu', function(e) {
+      if (e.target.tagName === 'IMG' && e.target.closest('.video-card')) {
+        e.preventDefault();
+        
+        const videoCard = e.target.closest('.video-card');
+        const videoLink = videoCard.querySelector('.video-link');
+        let href = videoLink.getAttribute('href');
+        
+        if (!href) return;
+        
+        // NORMALIZAR la URL
+        if (!href.startsWith('http') && !href.startsWith('/')) {
+          if (!href.startsWith('videos/') && href.endsWith('.html')) {
+            href = 'videos/' + href;
+          }
+        }
+        
+        // Crear URL absoluta
+        let fullUrl;
+        if (href.startsWith('http')) {
+          fullUrl = href;
+        } else if (href.startsWith('/')) {
+          fullUrl = window.location.origin + href;
+        } else {
+          fullUrl = window.location.origin + '/' + href;
+        }
+        
+        const existingMenu = document.getElementById('custom-context-menu');
+        if (existingMenu) existingMenu.remove();
+        
+        const menu = document.createElement('div');
+        menu.id = 'custom-context-menu';
+        menu.style.cssText = `
+          position: fixed;
+          top: ${e.clientY}px;
+          left: ${e.clientX}px;
+          background: #1a1a1a;
+          border: 1px solid #2a2a2a;
+          border-radius: 4px;
+          padding: 0.5rem 0;
+          z-index: 10000;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        `;
+        
+        const copyLink = document.createElement('div');
+        copyLink.textContent = 'Copy link...';
+        copyLink.style.cssText = `
+          padding: 0.5rem 1rem;
+          cursor: pointer;
+          color: #e0e0e0;
+          font-size: 0.9rem;
+        `;
+        copyLink.onmouseover = () => copyLink.style.background = '#2a2a2a';
+        copyLink.onmouseout = () => copyLink.style.background = 'transparent';
+        copyLink.onclick = () => {
+          navigator.clipboard.writeText(fullUrl).then(() => {
+            // Link copied silently
+          }).catch(console.error);
+          menu.remove();
+        };
+        
+        menu.appendChild(copyLink);
+        document.body.appendChild(menu);
+        
+        setTimeout(() => {
+          document.addEventListener('click', function closeMenu() {
+            if (menu && menu.parentNode) menu.remove();
+            document.removeEventListener('click', closeMenu);
+          });
+        }, 100);
+        
+        return false;
+      }
+    });
+    
+    // Remove custom menu on click elsewhere
+    document.addEventListener('click', function() {
+      if (contextMenuTarget) {
+        contextMenuTarget.remove();
+        contextMenuTarget = null;
+      }
+    });
+    
+    // Disable dragging images
+    document.addEventListener('dragstart', function(e) {
+      if (e.target.tagName === 'IMG') {
+        e.preventDefault();
+        return false;
+      }
+    });
+  </script>
+</body>
+</html>
