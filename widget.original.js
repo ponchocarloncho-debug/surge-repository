@@ -38,58 +38,6 @@ const WIDGET_CONFIG = {
     .favorite-btn:hover {
       transform: scale(1.2);
     }
-    
-    /* Toast notification */
-    .toast {
-      position: fixed;
-      bottom: 2rem;
-      right: 2rem;
-      background: rgba(0, 0, 0, 0.9);
-      color: white;
-      padding: 1rem 1.5rem;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      z-index: 10000;
-      animation: slideIn 0.3s ease-out;
-      max-width: 350px;
-    }
-    
-    .toast.removing {
-      animation: slideOut 0.3s ease-out;
-    }
-    
-    .toast.added {
-      border-left: 4px solid #22c55e;
-    }
-    
-    .toast.removed {
-      border-left: 4px solid #ef4444;
-    }
-    
-    @keyframes slideIn {
-      from {
-        transform: translateX(400px);
-        opacity: 0;
-      }
-      to {
-        transform: translateX(0);
-        opacity: 1;
-      }
-    }
-    
-    @keyframes slideOut {
-      from {
-        transform: translateX(0);
-        opacity: 1;
-      }
-      to {
-        transform: translateX(400px);
-        opacity: 0;
-      }
-    }
   `;
   document.head.appendChild(style);
 })();
@@ -179,52 +127,24 @@ const WIDGET_CONFIG = {
   }
   
   // Toggle favorite
-  function toggleFavorite(button, event) {
+  function toggleFavorite(videoUrl, event) {
     event.preventDefault();
     event.stopPropagation();
-    
-    const videoUrl = button.dataset.videoUrl;
-    const videoTitle = button.dataset.videoTitle;
     
     let favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
     const index = favorites.indexOf(videoUrl);
     
     if (index > -1) {
       favorites.splice(index, 1);
-      button.innerHTML = '☆';
-      button.classList.remove('favorited');
-      showToast(`"${videoTitle}" removed from favorites`, 'removed');
+      event.currentTarget.innerHTML = '☆';
+      event.currentTarget.classList.remove('favorited');
     } else {
       favorites.push(videoUrl);
-      button.innerHTML = '★';
-      button.classList.add('favorited');
-      showToast(`"${videoTitle}" added to favorites`, 'added');
+      event.currentTarget.innerHTML = '★';
+      event.currentTarget.classList.add('favorited');
     }
     
     localStorage.setItem('favorites', JSON.stringify(favorites));
-  }
-  
-  // Show toast notification
-  function showToast(message, type) {
-    // Remove existing toasts
-    const existingToasts = document.querySelectorAll('.toast');
-    existingToasts.forEach(toast => toast.remove());
-    
-    // Create new toast
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    toast.innerHTML = `
-      <span>${type === 'added' ? '✓' : '✕'}</span>
-      <span>${message}</span>
-    `;
-    
-    document.body.appendChild(toast);
-    
-    // Auto remove after 3 seconds
-    setTimeout(() => {
-      toast.classList.add('removing');
-      setTimeout(() => toast.remove(), 300);
-    }, 3000);
   }
   
   // Check if video is favorited
@@ -262,9 +182,7 @@ const WIDGET_CONFIG = {
           </div>
         </a>
         <button class="favorite-btn ${favorited ? 'favorited' : ''}" 
-                data-video-url="${video.url}"
-                data-video-title="${video.title.replace(/"/g, '&quot;')}"
-                onclick="window.toggleFavorite(this, event)" 
+                onclick="window.toggleFavorite('${video.url}', event)" 
                 title="${favorited ? 'Remove from favorites' : 'Add to favorites'}">
           ${favorited ? '★' : '☆'}
         </button>
