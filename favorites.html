@@ -384,27 +384,50 @@
     <div id="favorites-container"></div>
   </main>
   
+  <script src="widget.js"></script>
   <script>
     let allVideos = [];
     
     // Load all videos data
     async function loadVideos() {
+      // Check if widget.js already loaded the data
+      if (window.videosData && window.videosData.length > 0) {
+        allVideos = window.videosData;
+        console.log('Using videos from widget:', allVideos.length);
+        displayFavorites();
+        return;
+      }
+      
+      // Wait up to 2 seconds for widget to load
+      let attempts = 0;
+      const checkInterval = setInterval(() => {
+        if (window.videosData && window.videosData.length > 0) {
+          allVideos = window.videosData;
+          console.log('Widget loaded videos:', allVideos.length);
+          clearInterval(checkInterval);
+          displayFavorites();
+        } else if (attempts++ > 20) {
+          // After 2 seconds, try loading directly
+          clearInterval(checkInterval);
+          loadDirectly();
+        }
+      }, 100);
+    }
+    
+    async function loadDirectly() {
       try {
         const response = await fetch('videodata.json');
-        if (!response.ok) {
-          throw new Error('videodata.json not found');
+        if (response.ok) {
+          const contentType = response.headers.get("content-type");
+          if (contentType && contentType.includes("application/json")) {
+            allVideos = await response.json();
+            console.log('Loaded videos directly:', allVideos.length);
+          }
         }
-        const contentType = response.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-          throw new Error('videodata.json not found');
-        }
-        allVideos = await response.json();
-        displayFavorites();
       } catch (error) {
-        console.warn('videodata.json not available - showing favorites anyway');
-        // Even without videodata.json, we can show favorites if user has any
-        displayFavorites();
+        console.warn('videodata.json not available');
       }
+      displayFavorites();
     }
     
     // Get favorites from localStorage
