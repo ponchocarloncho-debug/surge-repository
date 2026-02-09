@@ -128,10 +128,10 @@ const WIDGET_CONFIG = {
       console.log('Widget loaded videos:', videosData.length);
       generateWidget();
     } catch (error) {
-      console.warn('videos.json not available - this is normal in preview mode');
+      console.warn('videodata.json not available - this is normal in preview mode');
       const widgetEl = document.getElementById('video-widget');
       if (widgetEl) {
-        widgetEl.innerHTML = '<p style="color: #888; text-align: center; padding: 2rem;">Upload videos.json to see content</p>';
+        widgetEl.innerHTML = '<p style="color: #888; text-align: center; padding: 2rem;">Upload videodata.json to see content</p>';
       }
     }
   }
