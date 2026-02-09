@@ -30,15 +30,13 @@ const WIDGET_CONFIG = {
   style.textContent = `
     .favorite-btn {
       color: #666;
-      filter: grayscale(100%);
       transition: all 0.3s;
     }
     .favorite-btn.favorited {
       color: #e50914;
-      filter: grayscale(0%);
     }
     .favorite-btn:hover {
-      transform: scale(1.1);
+      transform: scale(1.2);
     }
   `;
   document.head.appendChild(style);
@@ -138,9 +136,11 @@ const WIDGET_CONFIG = {
     
     if (index > -1) {
       favorites.splice(index, 1);
+      event.currentTarget.innerHTML = '☆';
       event.currentTarget.classList.remove('favorited');
     } else {
       favorites.push(videoUrl);
+      event.currentTarget.innerHTML = '★';
       event.currentTarget.classList.add('favorited');
     }
     
@@ -184,7 +184,7 @@ const WIDGET_CONFIG = {
         <button class="favorite-btn ${favorited ? 'favorited' : ''}" 
                 onclick="window.toggleFavorite('${video.url}', event)" 
                 title="${favorited ? 'Remove from favorites' : 'Add to favorites'}">
-          🔖
+          ${favorited ? '★' : '☆'}
         </button>
       </div>
     `;

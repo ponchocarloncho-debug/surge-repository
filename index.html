@@ -355,11 +355,26 @@
       } else {
         const resultsHTML = `
           <div class="widget-section">
-            <h2 class="widget-title">
-              Search Results (${results.length} total)
-              <span style="font-size: 0.8rem; color: #888; font-weight: normal;">
-                - ${titleMatches} by title, ${tagMatches} by tag, ${descMatches} by description
+            <h2 class="widget-title" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+              <span>
+                Search Results (${results.length} total)
+                <span style="font-size: 0.8rem; color: #888; font-weight: normal;">
+                  - ${titleMatches} by title, ${tagMatches} by tag, ${descMatches} by description
+                </span>
               </span>
+              <button onclick="clearSearch()" style="
+                background: #2a2a2a;
+                color: white;
+                border: 1px solid #3a3a3a;
+                padding: 0.5rem 1rem;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 0.85rem;
+                font-weight: bold;
+                transition: background 0.3s;
+              " onmouseover="this.style.background='#3a3a3a'" onmouseout="this.style.background='#2a2a2a'">
+                ✕ Clear
+              </button>
             </h2>
             <div class="widget-grid">
               ${results.map(video => createSearchResultCard(video)).join('')}
@@ -415,6 +430,13 @@
       }
       
       localStorage.setItem('favorites', JSON.stringify(favorites));
+    }
+    
+    // Clear search and show widget
+    function clearSearch() {
+      document.getElementById('search-box').value = '';
+      document.getElementById('search-results').classList.remove('active');
+      document.getElementById('video-widget').style.display = 'block';
     }
     
     // Search event listener with debounce
