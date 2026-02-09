@@ -170,7 +170,7 @@
       right: 0.5rem;
       background: rgba(0, 0, 0, 0.7);
       border: none;
-      color: #fff;
+      color: #666;
       font-size: 1.5rem;
       width: 40px;
       height: 40px;
@@ -184,12 +184,12 @@
     }
     
     .favorite-btn:hover {
-      background: rgba(229, 9, 20, 0.9);
-      transform: scale(1.1);
+      background: rgba(0, 0, 0, 0.9);
+      transform: scale(1.2);
     }
     
     .favorite-btn.favorited {
-      color: #ffd700;
+      color: #e50914;
     }
     
     .no-results {
@@ -245,13 +245,37 @@
     }
   </script>
   
-  <div class="search-container">
+  <div class="search-container" style="position: relative;">
     <input 
       type="text" 
       id="search-box" 
       class="search-box" 
       placeholder="Search by title, tags, or description..."
+      style="padding-right: 100px;"
     >
+    <button 
+      id="clear-search-btn" 
+      onclick="clearSearch()" 
+      style="
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: #2a2a2a;
+        color: #888;
+        border: 1px solid #3a3a3a;
+        padding: 0.4rem 0.8rem;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.85rem;
+        transition: all 0.3s;
+        display: none;
+      "
+      onmouseover="this.style.background='#3a3a3a'; this.style.color='#fff';" 
+      onmouseout="this.style.background='#2a2a2a'; this.style.color='#888';"
+    >
+      ✕ Clear
+    </button>
   </div>
   
   <main class="main-content">
@@ -355,26 +379,11 @@
       } else {
         const resultsHTML = `
           <div class="widget-section">
-            <h2 class="widget-title" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
-              <span>
-                Search Results (${results.length} total)
-                <span style="font-size: 0.8rem; color: #888; font-weight: normal;">
-                  - ${titleMatches} by title, ${tagMatches} by tag, ${descMatches} by description
-                </span>
+            <h2 class="widget-title">
+              Search Results (${results.length} total)
+              <span style="font-size: 0.8rem; color: #888; font-weight: normal;">
+                - ${titleMatches} by title, ${tagMatches} by tag, ${descMatches} by description
               </span>
-              <button onclick="clearSearch()" style="
-                background: #2a2a2a;
-                color: white;
-                border: 1px solid #3a3a3a;
-                padding: 0.5rem 1rem;
-                border-radius: 4px;
-                cursor: pointer;
-                font-size: 0.85rem;
-                font-weight: bold;
-                transition: background 0.3s;
-              " onmouseover="this.style.background='#3a3a3a'" onmouseout="this.style.background='#2a2a2a'">
-                ✕ Clear
-              </button>
             </h2>
             <div class="widget-grid">
               ${results.map(video => createSearchResultCard(video)).join('')}
@@ -437,12 +446,16 @@
       document.getElementById('search-box').value = '';
       document.getElementById('search-results').classList.remove('active');
       document.getElementById('video-widget').style.display = 'block';
+      document.getElementById('clear-search-btn').style.display = 'none';
     }
     
     // Search event listener with debounce
     let searchTimeout;
     document.getElementById('search-box').addEventListener('input', function(e) {
       clearTimeout(searchTimeout);
+      const hasValue = e.target.value.trim().length > 0;
+      document.getElementById('clear-search-btn').style.display = hasValue ? 'block' : 'none';
+      
       searchTimeout = setTimeout(() => {
         searchVideos(e.target.value);
       }, 300);
