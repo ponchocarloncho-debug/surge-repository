@@ -103,22 +103,29 @@ const WIDGET_CONFIG = {
       // Determine the correct path based on current location
       const currentPath = window.location.pathname;
       const isInVideosFolder = currentPath.includes('/videos/');
-      const jsonPath = isInVideosFolder ? '../videos.json' : 'videos.json';
+      const jsonPath = isInVideosFolder ? '../videodata.json' : 'videodata.json';
+      
+      console.log('Widget loading from:', currentPath);
+      console.log('Is in videos folder:', isInVideosFolder);
+      console.log('JSON path:', jsonPath);
       
       const response = await fetch(jsonPath);
+      console.log('Widget response:', response.status, response.statusText);
+      
       if (!response.ok) {
-        console.warn('videos.json not available - this is normal in preview mode');
-        document.getElementById('video-widget').innerHTML = '<p style="color: #888; text-align: center; padding: 2rem;">Upload videos.json to see content</p>';
+        console.warn('videodata.json not available - this is normal in preview mode');
+        document.getElementById('video-widget').innerHTML = '<p style="color: #888; text-align: center; padding: 2rem;">Upload videodata.json to see content</p>';
         return;
       }
       const contentType = response.headers.get("content-type");
       if (!contentType || !contentType.includes("application/json")) {
-        console.warn('videos.json not found - upload the file to your server');
-        document.getElementById('video-widget').innerHTML = '<p style="color: #888; text-align: center; padding: 2rem;">Upload videos.json to see content</p>';
+        console.warn('videodata.json not found - upload the file to your server');
+        document.getElementById('video-widget').innerHTML = '<p style="color: #888; text-align: center; padding: 2rem;">Upload videodata.json to see content</p>';
         return;
       }
       videosData = await response.json();
       window.videosData = videosData; // Store globally for loadMoreRecent
+      console.log('Widget loaded videos:', videosData.length);
       generateWidget();
     } catch (error) {
       console.warn('videos.json not available - this is normal in preview mode');

@@ -362,21 +362,29 @@
     
     async function loadAllVideos() {
       try {
-        const response = await fetch('videos.json');
+        console.log('Attempting to load videodata.json');
+        const response = await fetch('videodata.json');
+        console.log('Response status:', response.status, response.statusText);
+        
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const contentType = response.headers.get("content-type");
+        console.log('Content-Type:', contentType);
+        
         if (!contentType || !contentType.includes("application/json")) {
-          console.warn('videos.json not found - search will not work until file is uploaded');
+          console.warn('videodata.json not found - search will not work until file is uploaded');
+          console.warn('Response content type:', contentType);
           return;
         }
         allVideos = await response.json();
+        console.log('Loaded videos:', allVideos.length);
         
         // After loading, check for URL search parameter
         checkUrlSearchParam();
       } catch (error) {
-        console.warn('videos.json not found or invalid - this is normal in preview mode');
+        console.error('Error loading videodata.json:', error);
+        console.warn('videodata.json not found or invalid - this is normal in preview mode');
       }
     }
     
