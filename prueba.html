@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Player</title>
+    <meta property="og:image" content="https://img166.picturelol.com/th/73709/0q9ff7ax8bob.jpg">
+    <meta property="og:video" content="https://filemoon.to/e/d7k0uay1kuwd/">
+    <meta property="og:type" content="video.other">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+        }
+
+        .video-container {
+            position: relative;
+            max-width: 520px;
+            width: 100%;
+            margin: 20px;
+        }
+
+        .thumbnail-wrapper {
+            position: relative;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .thumbnail-wrapper img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .play-button {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 0, 0, 0.8);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .play-button:hover {
+            background: rgba(255, 0, 0, 1);
+            transform: translate(-50%, -50%) scale(1.1);
+        }
+
+        .play-button::after {
+            content: '';
+            width: 0;
+            height: 0;
+            border-left: 25px solid white;
+            border-top: 15px solid transparent;
+            border-bottom: 15px solid transparent;
+            margin-left: 5px;
+        }
+
+        .embed-container {
+            display: none;
+            position: relative;
+            padding-bottom: 56.25%;
+            height: 0;
+            overflow: hidden;
+            max-width: 100%;
+        }
+
+        .embed-container.active {
+            display: block;
+        }
+
+        .embed-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="video-container">
+        <!-- Thumbnail with play button -->
+        <div class="thumbnail-wrapper" id="thumbnailWrapper">
+            <img src="https://img166.picturelol.com/th/73709/0q9ff7ax8bob.jpg" alt="Video thumbnail">
+            <div class="play-button"></div>
+        </div>
+
+        <!-- Embed container (hidden initially) -->
+        <div class="embed-container" id="embedContainer"></div>
+    </div>
+
+    <script>
+        const thumbnailWrapper = document.getElementById('thumbnailWrapper');
+        const embedContainer = document.getElementById('embedContainer');
+        
+        // Ofuscar la URL del video
+        const parts = ['aHR0cHM6Ly9maWxlbW9vbi50by9lL2Q3azB1YXkxa3V3ZC8='];
+        
+        thumbnailWrapper.addEventListener('click', function() {
+            // Hide thumbnail
+            thumbnailWrapper.classList.add('hidden');
+            
+            // Decode video URL
+            const videoUrl = atob(parts[0]);
+            
+            // Create iframe dynamically
+            const iframe = document.createElement('iframe');
+            iframe.setAttribute('src', videoUrl);
+            iframe.setAttribute('allowfullscreen', 'true');
+            iframe.setAttribute('style', 'border:0;position:absolute;top:0;left:0;width:100%;height:100%;');
+            iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture');
+            
+            // Add iframe to container
+            embedContainer.appendChild(iframe);
+            embedContainer.classList.add('active');
+        });
+    </script>
+</body>
+</html>
